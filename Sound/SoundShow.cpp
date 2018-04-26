@@ -209,9 +209,9 @@ LRESULT SoundShow::OnMM_WOM_CLOSE(UINT wParam, LONG lParam)
 
 	if (bTerminating)
 	{
-
-	}
 		SendMessage((DWORD)m_hWnd, WM_SYSCOMMAND, SC_CLOSE);
+	}
+		
 	return NULL;
 }
 
@@ -260,7 +260,7 @@ void SoundShow::OnBnClickedSave()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	//保存文件
-	FILE *pfile = fopen("f:\\wave.pcm", "wb");
+	FILE *pfile = fopen("c:\\wave.pcm", "wb");
 	if (pfile == NULL) return ;
 	fwrite(pSaveBuffer, sizeof(BYTE), dwDataLength, pfile);
 	fclose(pfile);
@@ -272,7 +272,7 @@ void SoundShow::OnBnClickedOpen()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	//打开文件
-	FILE *pfile = fopen("f:\\wave.pcm", "rb");
+	FILE *pfile = fopen("c:\\wave.pcm", "rb");
 	if (pfile == NULL) return  ;
 	dwDataLength = 1024 * 1024 * 30;
 	//  fread(&dwDataLength,sizeof(DWORD),1,pfile);
