@@ -12,7 +12,6 @@
 
 IMPLEMENT_DYNAMIC(SoundShow, CDialog)
 
-
 SoundShow::SoundShow(CWnd* pParent /*=NULL*/)
 	: CDialog(IDD_SOUNDSHOW, pParent)
 {
@@ -33,7 +32,6 @@ SoundShow::SoundShow(CWnd* pParent /*=NULL*/)
 	m_bRevOK = false;
 	memset(m_RevBuffer, 0, sizeof(m_RevBuffer));
 	m_nTestCount = 0;
-
 
 }
 
@@ -64,10 +62,7 @@ BEGIN_MESSAGE_MAP(SoundShow, CDialog)
 	ON_BN_CLICKED(IDC_SEND, &SoundShow::OnBnClickedSend)
 END_MESSAGE_MAP()
 
-
 // SoundShow 消息处理程序
-
-
 
 //打开设备时消息，在此期间我们可以进行一些初始化工作
 LRESULT SoundShow::OnMM_WIM_OPEN(UINT wParam, LONG lParam)
@@ -101,11 +96,10 @@ LRESULT SoundShow::OnMM_WIM_OPEN(UINT wParam, LONG lParam)
 }
 
 LRESULT SoundShow::OnMM_WIM_DATA(UINT wParam, LONG lParam)
-{//当开始录音后 当buffer已满后，将收到MM_WIN_DATA消息，处理该消息可以保存已录好的数据
+{
+	//当开始录音后 当buffer已满后，将收到MM_WIN_DATA消息，处理该消息可以保存已录好的数据
 
 	GetDlgItem(IDC_STATIC1)->SetWindowTextW(TEXT("OnMM_WIM_DATA"));
-
-
 
 	pNewBuffer = (PBYTE)realloc(pSaveBuffer, dwDataLength +((PWAVEHDR)lParam)->dwBytesRecorded);
 
@@ -126,8 +120,6 @@ LRESULT SoundShow::OnMM_WIM_DATA(UINT wParam, LONG lParam)
 		waveInClose(hWaveIn);
 		return TRUE;
 	}
-
-	// Send out a new buffer
 
 	waveInAddBuffer(hWaveIn, (PWAVEHDR)lParam, sizeof(WAVEHDR));
 	return NULL;
@@ -253,7 +245,6 @@ void SoundShow::OnBnClickedQuit()
 	AfxGetMainWnd()->SendMessage(WM_CLOSE);    /* exit the pragma*/
 
 }
-
 
 //保存文件
 void SoundShow::OnBnClickedSave()
@@ -422,7 +413,7 @@ void SoundShow::OnBnClickedPlayEnd()
 	//waveOutClose(hWaveOut);
 }
 
-
+//窗口初始化
 BOOL SoundShow::OnInitDialog()
 {
 	CDialog::OnInitDialog();
@@ -460,20 +451,19 @@ BOOL SoundShow::OnInitDialog()
 	}	 
 }
 
-
+//程序主要算法
+//pdInput[IN1]		发送端时钟
+//pdInput[IN2]		接收端时钟
+//pdInput[IN3]		帧数据
+//pdOutput[OUT1]	发送端转化的bit stream
+//pdOutput[OUT2]	接收端还原的bit stream
 void SoundShow::RunAlgrithm(const double * pdInput, double * pdOutput) {
 	//输入时钟
 	//数据发送
-	static double nClk = m_nClkState;
-	nClk = pdInput[0];
-	pdOutput[1] = pdInput[1];
-	pdOutput[2] = 3.3;
-	if (m_nClkState != nClk) {
-		AfxMessageBox(TEXT("get diff"));
-	}
-	m_nClkState = nClk;
-	pdOutput[0] = m_nClkState;
-#if 0
+	double nClk = pdInput[IN1];
+
+#if 1//进行bit流转换
+	//数据帧格式： 2B帧头 + 数据段大小可变 + 2B帧尾
 	if (nClk > 1.0 && m_nClkState < 1.0)	//时钟上升沿输出数据
 	{
 		if (m_nOutCount == 0 || m_nOutCount == 1)	//重新开始传输,首先开始传输帧头,帧头为0xffff，占2字节
@@ -484,11 +474,11 @@ void SoundShow::RunAlgrithm(const double * pdInput, double * pdOutput) {
 				m_nOutCount = 2;
 
 		}
-		else if (m_nOutCount < m_nSendBufferSize + 2)	//发送数据
+		else if (m_nOutCount < m_nSendBufferSize + 2)	//发送数据，由于2B帧头，故存在加减2修复误差
 		{
 			int nBitData[8] = { 0 };
-			int nData = m_nSendBuffer[m_nOutCount - 2];
-			for (int i = 0; i < 8; ++i)
+			int nData = m_nSendBuffer[m_nOutCount - 2];//读取1B
+			for (int i = 0; i < 8; ++i)//逐bit赋值
 			{
 				if ((nData & 0x80) > 0)
 					nBitData[i] = 1;
@@ -504,7 +494,7 @@ void SoundShow::RunAlgrithm(const double * pdInput, double * pdOutput) {
 				m_nOutCount++;
 			}
 		}
-		else if (m_nOutCount > m_nSendBufferSize + 1)
+		else if (m_nOutCount > m_nSendBufferSize + 1)//也即m_nOutCount >= m_nSendBufferSize + 2
 		{
 			//发送完毕后，发送帧尾,帧尾为0xfffe,占2字节
 			if (m_nFrameEndCount < 15)
@@ -519,25 +509,30 @@ void SoundShow::RunAlgrithm(const double * pdInput, double * pdOutput) {
 				m_nOutCount = 0;
 				m_nBitCount = 0;
 				m_nFrameHeaderCount = 0;
+				//delete m_nSendBuffer;
 			}
 		}
-
+		/*
 		m_RevTestBuffer[m_nTestCount] = pdOutput[OUT1];
 		m_nTestCount++;
 		if (m_nTestCount > 63)
 			m_nTestCount = 0;
+		*/
 	}
 	m_nClkState = nClk;
 
 	//数据接收
+	//pdInput[IN2]为时钟信号
+	//pdInput[IN3]为数据流
+	//pdOutput[OUT2]为恢复的数据流
 	double nReClk = pdInput[IN2];
 	if (nReClk < 1.0 && m_nReClkState > 1.0)	//时钟下降沿处理数据
 	{
 		//接收缓冲
-		//首先接收帧头0xffff,当接收完帧头后，数据以8bit为单位组成一个字节放入char数组缓冲中
+		//首先else接收帧头0xffff,当接收完帧头后，数据以8bit为单位组成一个字节放入char数组缓冲中
+		//帧尾为0xfffe
 		if (m_bFrameHeader == TRUE)
 		{
-			//帧尾为0xfffe
 			if (pdInput[IN3] > 1.0)
 				m_nRevBitBuffer[m_nRevBitCount] = 1;
 			else
@@ -555,21 +550,27 @@ void SoundShow::RunAlgrithm(const double * pdInput, double * pdOutput) {
 					{
 						m_RevBuffer[i] = m_RevByteBuffer[i];
 					}
+					dwDataLength = m_nRevByteCount - 1;
+					pSaveBuffer = (PBYTE)malloc(sizeof(PBYTE)*dwDataLength);
+					memcpy(pSaveBuffer, m_RevBuffer, dwDataLength);
+					/*
 					std::string strRevText = m_RevBuffer;
 					std::wstring wstrRevText;
 					utility::Ansi2Unicode(strRevText, wstrRevText);
 					m_TextShowEdit.SetWindowText(wstrRevText.c_str());
+					*/
 					m_bRevOK = TRUE;
 					m_bFrameHeader = FALSE;
 				}
 				m_nRevByteCount++;
-				if (m_nRevByteCount > 500)
+				if (m_nRevByteCount > 10*1024*1024)//max = 10M
 				{
 					m_nRevByteCount = 0;
 					m_bFrameHeader = FALSE;
 				}
 			}
 		}
+		// 先接收帧头
 		else
 		{
 			if (pdInput[IN3] > 1.0)
@@ -578,7 +579,7 @@ void SoundShow::RunAlgrithm(const double * pdInput, double * pdOutput) {
 				m_nFrameRevCount = 0;
 			if (m_nFrameRevCount < 0)
 				m_nFrameRevCount = 0;
-			if (m_nFrameRevCount == 16)
+			if (m_nFrameRevCount == 16)//帧头接收完成，初始化开始接受数据
 			{
 				m_bFrameHeader = TRUE;
 				m_nRevBitCount = 0;
@@ -598,9 +599,13 @@ void SoundShow::OnBnClickedSend()
 {
 	// TODO: 在此添加控件通知处理程序代码
 
-	
 	m_nSendBufferSize = dwDataLength;
 	m_nSendBuffer = new char[m_nSendBufferSize];
-	m_nSendBuffer = (char*)pSaveBuffer;
+
+	OnBnClickedSave();
+	FILE *pfile = fopen("c:\\test.wave", "rb");
+	if (pfile == NULL) return;
+	fwrite(m_nSendBuffer, sizeof(m_nSendBuffer), m_nSendBufferSize, pfile);
+	fclose(pfile);
 
 }

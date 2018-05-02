@@ -81,9 +81,10 @@ void LtDestroyObject(void * pObject)
 }
 //算法主函数
 //此函数第一个参数（pObject）是LtCreateObject()的返回值
-//此函数第二个参数（pdInput）是指向输入数组的指针
-//此函数第三个参数（pdOutput）是指向输出数组的指针
-void LtDLLMain(void * pObject, const double * pdInput, double * pdOutput)
+//此函数第二个参数 新版本工程的函数接口
+//此函数第三个参数（pdInput）是指向输入数组的指针
+//此函数第四个参数（pdOutput）是指向输出数组的指针
+void LtDLLMain(void * pObject, const bool *, const double * pdInput, double * pdOutput)
 {
 	ASSERT(pObject != NULL);
 	SoundShow * pAlgorithm = static_cast<SoundShow *>(pObject);

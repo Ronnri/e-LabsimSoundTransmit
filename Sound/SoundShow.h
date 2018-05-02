@@ -64,6 +64,7 @@ private:
 	int m_nBitCount;
 	int m_nOutCount;
 	//char m_nSendBuffer[4096];
+
 	char *m_nSendBuffer;
 	int m_nFrameHeaderCount;
 

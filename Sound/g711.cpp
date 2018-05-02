@@ -333,8 +333,8 @@ BOOL EncodeProcess()
 	FILE *pInFile;
 	FILE *pOutFile;
 	char ch_1, ch_2;
-	char name1[] = "f:\\wave.pcm";
-	char name2[] = "f:\\test.wave";
+	char name1[] = "c:\\wave.pcm";
+	char name2[] = "c:\\test.wave";
 
 	/*
 	//=====================================================================
