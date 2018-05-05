@@ -31,7 +31,7 @@ SoundShow::SoundShow(CWnd* pParent /*=NULL*/)
 	m_nRevByteCount = 0;
 	m_bRevOK = false;
 	memset(m_RevBuffer, 0, sizeof(m_RevBuffer));
-	m_nTestCount = 0;
+
 
 }
 
@@ -42,6 +42,9 @@ SoundShow::~SoundShow()
 void SoundShow::DoDataExchange(CDataExchange* pDX)
 {
 	CDialog::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_IPADDRESS1, m_IPAddress);
+	DDX_Control(pDX, IDC_EDIT1, m_PortShow);
+
 }
 
 BEGIN_MESSAGE_MAP(SoundShow, CDialog)
@@ -52,6 +55,7 @@ BEGIN_MESSAGE_MAP(SoundShow, CDialog)
 	ON_MESSAGE(MM_WOM_OPEN, OnMM_WOM_OPEN)
 	ON_MESSAGE(MM_WOM_DONE, OnMM_WOM_DONE)
 	ON_MESSAGE(MM_WOM_CLOSE, OnMM_WOM_CLOSE)
+	ON_MESSAGE(MSG_HAS_NEW_DATA, &SoundShow::OnNewData)
 	ON_BN_CLICKED(IDC_SAVE, &SoundShow::OnBnClickedSave)
 	ON_BN_CLICKED(IDC_OPEN, &SoundShow::OnBnClickedOpen)
 	ON_BN_CLICKED(IDC_RECORD_BEG, &SoundShow::OnBnClickedRecordBeg)
@@ -60,6 +64,10 @@ BEGIN_MESSAGE_MAP(SoundShow, CDialog)
 	ON_BN_CLICKED(IDC_PLAY_END, &SoundShow::OnBnClickedPlayEnd)
 	ON_BN_CLICKED(IDC_QUIT, &SoundShow::OnBnClickedQuit)
 	ON_BN_CLICKED(IDC_SEND, &SoundShow::OnBnClickedSend)
+	ON_BN_CLICKED(IDC_SS, &SoundShow::OnBnClickedSs)
+	ON_BN_CLICKED(IDC_SC, &SoundShow::OnBnClickedSc)
+	ON_BN_CLICKED(IDC_SRESET, &SoundShow::OnBnClickedSreset)
+	ON_BN_CLICKED(IDC_SOK, &SoundShow::OnBnClickedSok)
 END_MESSAGE_MAP()
 
 // SoundShow 消息处理程序
@@ -417,7 +425,11 @@ void SoundShow::OnBnClickedPlayEnd()
 BOOL SoundShow::OnInitDialog()
 {
 	CDialog::OnInitDialog();
-	
+	if (!AfxSocketInit())
+	{
+		AfxMessageBox(IDP_SOCKETS_INIT_FAILED);
+		return FALSE;
+	}
 	
 	// TODO:  在此添加额外的初始化
 	try {
@@ -442,9 +454,23 @@ BOOL SoundShow::OnInitDialog()
 		pSaveBuffer = (PBYTE)malloc(1);
 		dwDataLength = 0;
 
+		//socket设置
+		m_TargetPort = 8000;
+		m_IPAddress.SetAddress(127, 0, 0, 1);
+		m_PortShow.SetWindowText(_T("9000"));
+
+		//默认为发送方
+		m_bIsSend = TRUE;	
+		m_IsServer = TRUE;
+		m_IsRemoteOK = TRUE;
+		m_bHasNewData = FALSE;
+		m_IsServerCreatedSucceed = FALSE;
+		m_IsClientCreatedSucceed = FALSE;
+		m_nSendBufferIndex = 0;
+		m_nReceiveBufferIndex = 0;
 
 		return TRUE;
-		// return TRUE unless you set the focus to a control
+		
 	}
 	catch(WAVEFORMATEX){
 		return FALSE;// 异常: OCX 属性页应返回 FALSE
@@ -457,6 +483,49 @@ BOOL SoundShow::OnInitDialog()
 //pdInput[IN3]		帧数据
 //pdOutput[OUT1]	发送端转化的bit stream
 //pdOutput[OUT2]	接收端还原的bit stream
+void SoundShow::RunAlgrithm(const double * pdInput, double * pdOutput) {
+	
+}
+
+
+void SoundShow::OnBnClickedSend()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	//socket发送,写入文件，然后通过另一个模块来读取
+	OnBnClickedSave();
+
+	FILE *pfile = fopen("c:\\test.wave", "rb");
+	if (pfile == NULL) return;
+	dwDataLength = 1024 * 1024 * 30;
+	pSaveBuffer = (PBYTE)realloc(pSaveBuffer, dwDataLength);
+	m_nSendBufferSize = fread(pSaveBuffer, sizeof(BYTE), dwDataLength, pfile);
+	fclose(pfile);
+
+	m_nSendBuffer = new char[m_nSendBufferSize];//获取 需要发送的数据的大小
+	m_TargetSocket.Send(m_nSendBuffer, m_nSendBufferSize);
+
+}
+
+LRESULT SoundShow::OnNewData(WPARAM wParam, LPARAM lParam)
+{
+	CNewSocket *pSocket = reinterpret_cast<CNewSocket*>(wParam);
+	ASSERT(pSocket != NULL && !::IsBadReadPtr((void*)pSocket, sizeof(CNewSocket)));
+
+	if (m_IsServer) {//服务器端，作为接受数据的一端
+		char* a = pSocket->GetRevBuffer();
+		int bs = pSocket->m_nMsgLength;
+		char *buff = new char[bs];
+		memcpy(buff, a, bs * sizeof(char));
+		bs =bs;
+		pSocket->Send(buff, bs*sizeof(char));
+	}
+	else {//客户端，作为数据的发送端
+		//操作代码在OnSend中
+	}
+	return LRESULT();
+}
+
+#if 0
 void SoundShow::RunAlgrithm(const double * pdInput, double * pdOutput) {
 	//输入时钟
 	//数据发送
@@ -516,7 +585,7 @@ void SoundShow::RunAlgrithm(const double * pdInput, double * pdOutput) {
 		m_RevTestBuffer[m_nTestCount] = pdOutput[OUT1];
 		m_nTestCount++;
 		if (m_nTestCount > 63)
-			m_nTestCount = 0;
+		m_nTestCount = 0;
 		*/
 	}
 	m_nClkState = nClk;
@@ -563,7 +632,7 @@ void SoundShow::RunAlgrithm(const double * pdInput, double * pdOutput) {
 					m_bFrameHeader = FALSE;
 				}
 				m_nRevByteCount++;
-				if (m_nRevByteCount > 10*1024*1024)//max = 10M
+				if (m_nRevByteCount > 10 * 1024 * 1024)//max = 10M
 				{
 					m_nRevByteCount = 0;
 					m_bFrameHeader = FALSE;
@@ -594,18 +663,130 @@ void SoundShow::RunAlgrithm(const double * pdInput, double * pdOutput) {
 	m_nReClkState = nReClk;
 #endif
 }
+#endif
 
-void SoundShow::OnBnClickedSend()
+void SoundShow::OnBnClickedSs()
 {
 	// TODO: 在此添加控件通知处理程序代码
+	((CWnd *)(this->GetDlgItem(IDC_SC)))->EnableWindow(FALSE);
+	((CWnd *)(this->GetDlgItem(IDC_IPADDRESS1)))->EnableWindow(FALSE);
+	m_IsServer = TRUE;
 
-	m_nSendBufferSize = dwDataLength;
-	m_nSendBuffer = new char[m_nSendBufferSize];
+}
 
-	OnBnClickedSave();
-	FILE *pfile = fopen("c:\\test.wave", "rb");
-	if (pfile == NULL) return;
-	fwrite(m_nSendBuffer, sizeof(m_nSendBuffer), m_nSendBufferSize, pfile);
-	fclose(pfile);
 
+void SoundShow::OnBnClickedSc()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	((CWnd *)(this->GetDlgItem(IDC_SS)))->EnableWindow(FALSE);
+	((CWnd *)(this->GetDlgItem(IDC_IPADDRESS1)))->EnableWindow(TRUE);
+	m_IsServer = FALSE;
+}
+
+
+void SoundShow::OnBnClickedSreset()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	((CWnd *)(this->GetDlgItem(IDC_SC)))->EnableWindow(TRUE);
+	((CWnd *)(this->GetDlgItem(IDC_SS)))->EnableWindow(TRUE);
+	((CWnd *)(this->GetDlgItem(IDC_IPADDRESS1)))->EnableWindow(TRUE);
+	m_IsServer = TRUE;
+	if (m_IsServerCreatedSucceed) {
+
+		m_IsServerCreatedSucceed = FALSE;
+		m_Server.Close();
+		
+	}
+	if (m_IsClientCreatedSucceed) {
+
+		m_IsClientCreatedSucceed = FALSE;
+		m_TargetSocket.Close();
+	}
+
+}
+
+
+void SoundShow::OnBnClickedSok()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	CString strPortNum;
+	m_PortShow.GetWindowText(strPortNum);//获取端口号
+	m_TargetPort = _wtoi(strPortNum);
+
+	//server
+	/*
+	首先，讨论Create函数，分析socket句柄如何被创建并和CAsyncSocket对象关联。Create的实现如下：
+	BOOL CAsyncSocket::Create(UINT nSocketPort, int nSocketType,
+	long lEvent, LPCTSTR lpszSocketAddress)
+	{
+	if (Socket(nSocketType, lEvent))
+	{
+	if (Bind(nSocketPort,lpszSocketAddress))
+	return TRUE;
+	int nResult = GetLastError();
+	Close();
+	WSASetLastError(nResult);
+	}
+	return FALSE;
+	}
+	其中：
+	参数1表示本socket的端口，缺省是0，如果要创建数据报的socket，则必须指定一个端口号。
+	参数2表示本socket的类型，缺省是SOCK_STREAM，表示面向连接类型。
+	参数3是屏蔽位，表示希望对本socket监测的事件，缺省是FD_READ | FD_WRITE | FD_OOB | FD_ACCEPT | FD_CONNECT | FD_CLOSE。
+	参数4表示本socket的IP地址字符串，缺省是NULL。
+	Create调用Socket函数创建一个socket，并把它捆绑在this所指对象上，监测指定的网络事件。参数2和3被传递给Socket函数，如果希望创建数据报的socket，不要使用缺省参数，指定参数2是SOCK_DGRM。
+	如果上一步骤成功，则调用bind给新的socket分配端口和IP地址。
+	*/
+	if (m_IsServer && FALSE == m_IsServerCreatedSucceed) {
+		BOOL bFlag = FALSE;
+		//m_Server = new CLtSocket();
+		bFlag = m_Server.Create(m_TargetPort, SOCK_STREAM, FD_CLOSE | FD_ACCEPT);	//创建Socket服务
+		if (!bFlag)
+		{
+			m_Server.Close();
+			AfxMessageBox(_T("创建数据服务套接字失败!"));
+			return;
+		}
+		if (!m_Server.Listen(1)) {//监听
+			int nErrorCode = m_Server.GetLastError();
+			if (nErrorCode != WSAEWOULDBLOCK)
+			{
+				m_Server.Close();
+				AfxMessageBox(_T("开启数据服务失败!"));
+				return;
+			}
+		}
+		m_Server.SetViewWnd(this);
+		m_IsServerCreatedSucceed = TRUE;
+	}
+	if (m_IsServerCreatedSucceed) {
+		AfxMessageBox(_T("已创建成功！"));
+	}
+	
+
+	//client
+	if(FALSE == m_IsServer && FALSE ==m_IsClientCreatedSucceed){
+		
+		DWORD dwIP;
+		if (m_IPAddress.GetAddress(dwIP) < 4)	//获取目标IP地址
+		{
+			AfxMessageBox(_T("注意!\nIP地址填写不完整!"), MB_ICONWARNING);
+			return;
+		}
+		unsigned char *pIP;
+		pIP = (unsigned char*)&dwIP;
+		unsigned char *IP1 = pIP + 3;
+		unsigned char *IP2 = pIP + 2;
+		unsigned char *IP3 = pIP + 1;
+		unsigned char *IP4 = pIP;
+		m_TargetIP.Format(_T("%u.%u.%u.%u"), *IP1, *IP2, *IP3, *IP4);
+		m_TargetSocket.Create();
+		m_TargetSocket.Connect(m_TargetIP, m_TargetPort);	//连接目标
+		m_TargetSocket.AsyncSelect(FD_READ | FD_WRITE | FD_CLOSE);	//设置传输模式
+		m_TargetSocket.SetViewWnd(this);	//设置消息返回事件的句柄
+		m_IsClientCreatedSucceed = TRUE;
+	}
+	if (m_IsClientCreatedSucceed) {
+		AfxMessageBox(_T("已创建成功！"));
+	}
 }

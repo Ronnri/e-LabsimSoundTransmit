@@ -1,7 +1,13 @@
 #pragma once
+#include "CLtSocket.h"
+#include "afxcmn.h"
+#include "afxwin.h"
+
 #include "mmeapi.h"
 #define INP_BUFFER_SIZE 16384
+#define BUFFER_SIZE 4096
 // SoundShow ¶Ô»°¿ò
+#define IDP_SOCKETS_INIT_FAILED            103
 
 class SoundShow : public CDialog
 {
@@ -43,6 +49,11 @@ public:
 	afx_msg void OnBnClickedPlayBeg();
 	afx_msg void OnBnClickedPlayEnd();
 	afx_msg void OnBnClickedQuit();
+	afx_msg void OnBnClickedSs();
+	afx_msg void OnBnClickedSc();
+	afx_msg void OnBnClickedSreset();
+	afx_msg void OnBnClickedSok();
+
 	virtual BOOL OnInitDialog();
 	
 	afx_msg LRESULT OnMM_WIM_OPEN(UINT wParam, LONG lParam);
@@ -78,11 +89,27 @@ private:
 	bool m_bRevOK;
 	char m_RevBuffer[4096];
 
-	double m_RevTestBuffer[64];
-	int m_nTestCount;
+public:
 
-	CEdit m_TextInputEdit;
-	CEdit m_TextShowEdit;
+	LRESULT OnNewData(WPARAM wParam, LPARAM lParam);
+	CIPAddressCtrl m_IPAddress;
+	CEdit m_PortShow;
+	CLtSocket	m_Server;
+	CNewSocket	m_TargetSocket;
+
+	BOOL m_bIsSend;
+	BOOL m_IsRemoteOK;
+	BOOL m_bHasNewData;
+	BOOL m_IsServer;
+	BOOL m_IsServerCreatedSucceed;
+	BOOL m_IsClientCreatedSucceed;
+	
+	unsigned int m_TargetPort;
+	CString m_TargetIP;
+	unsigned int m_nSendBufferIndex;
+	unsigned int m_nReceiveBufferIndex;
+
+	char m_ReceiveBuffer[BUFFER_SIZE];
 
 };
 

@@ -189,6 +189,8 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CLtSocket.cpp" />
+    <ClCompile Include="CNewSocket.cpp" />
     <ClCompile Include="g711.cpp" />
     <ClCompile Include="Sound.cpp" />
     <ClCompile Include="SoundShow.cpp" />
@@ -201,6 +203,8 @@
     <ClCompile Include="utility.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CLtSocket.h" />
+    <ClInclude Include="CNewSocket.h" />
     <ClInclude Include="g711.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="Sound.h" />
