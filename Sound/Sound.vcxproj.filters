@@ -33,10 +33,13 @@
     <ClCompile Include="utility.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="CNewSocket.cpp">
+    <ClCompile Include="Server.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="CLtSocket.cpp">
+    <ClCompile Include="fileSource.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Client.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -62,10 +65,16 @@
     <ClInclude Include="utility.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="CNewSocket.h">
+    <ClInclude Include="Message.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="CLtSocket.h">
+    <ClInclude Include="Server.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="fileSource.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Client.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

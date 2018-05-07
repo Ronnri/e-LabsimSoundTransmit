@@ -1,5 +1,6 @@
 #pragma once
-#include "CLtSocket.h"
+#include "Server.h"
+#include "Client.h"
 #include "afxcmn.h"
 #include "afxwin.h"
 
@@ -91,26 +92,16 @@ private:
 
 public:
 
-	LRESULT OnNewData(WPARAM wParam, LPARAM lParam);
 	CIPAddressCtrl m_IPAddress;
-	CEdit m_PortShow;
-	CLtSocket	m_Server;
-	CNewSocket	m_TargetSocket;
+	CEdit			m_PortShow;
 
-	BOOL m_bIsSend;
-	BOOL m_IsRemoteOK;
-	BOOL m_bHasNewData;
+	Server Server;
+	Client Client;
+
 	BOOL m_IsServer;
-	BOOL m_IsServerCreatedSucceed;
-	BOOL m_IsClientCreatedSucceed;
-	
-	unsigned int m_TargetPort;
-	CString m_TargetIP;
-	unsigned int m_nSendBufferIndex;
-	unsigned int m_nReceiveBufferIndex;
 
-	char m_ReceiveBuffer[BUFFER_SIZE];
-
+	int m_TargetPort;
+	CString m_TargetIp;
 };
 
 

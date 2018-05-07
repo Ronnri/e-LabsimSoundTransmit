@@ -189,9 +189,10 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CLtSocket.cpp" />
-    <ClCompile Include="CNewSocket.cpp" />
+    <ClCompile Include="Client.cpp" />
+    <ClCompile Include="fileSource.cpp" />
     <ClCompile Include="g711.cpp" />
+    <ClCompile Include="Server.cpp" />
     <ClCompile Include="Sound.cpp" />
     <ClCompile Include="SoundShow.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -203,10 +204,12 @@
     <ClCompile Include="utility.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CLtSocket.h" />
-    <ClInclude Include="CNewSocket.h" />
+    <ClInclude Include="Client.h" />
+    <ClInclude Include="fileSource.h" />
     <ClInclude Include="g711.h" />
+    <ClInclude Include="Message.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="Server.h" />
     <ClInclude Include="Sound.h" />
     <ClInclude Include="SoundShow.h" />
     <ClInclude Include="stdafx.h" />
