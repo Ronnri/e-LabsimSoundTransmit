@@ -1,7 +1,8 @@
 #include "stdafx.h"
 #include "Server.h"
 #include "fileSource.h"
-
+#include "resource.h"
+#include "SoundShow.h"
 Server::Server()
 {
 }
@@ -54,7 +55,17 @@ bool Server::ReceiveFile(SOCKET sd)
 {
 	char buff[MAX_PACK_SIZE];
 	FILE *pFile;
-	pFile = fopen(fileName, "a+b");
+	const char *str = "C:\\";
+	const char *str2 = fileName;
+	const size_t len = strlen(str) + strlen(str2);
+	char *n_str = new char[len + 1];
+	strcpy(n_str, str);
+	strcat(n_str, str2);
+	//cout << n_str << endl;
+	
+
+	pFile = fopen(n_str, "ab+");
+	delete[] n_str;
 	_int64 i = 0;
 	while (i + 1<fileLength)
 	{
@@ -68,6 +79,7 @@ bool Server::ReceiveFile(SOCKET sd)
 		memset(buff, 0, sizeof(char)*MAX_PACK_SIZE);
 	}
 	fclose(pFile);
+	AfxMessageBox(TEXT("接收完成"));
 	return true;
 }
 void Server::CloseSocket()
@@ -89,6 +101,7 @@ bool Server::ProcessConnection(SOCKET sd)
 	Message::MsgHead *msgHead;
 	if (recv(sd, buff, MAX_PACK_SIZE, 0) == SOCKET_ERROR)
 	{
+
 		cout << "接收失败" << WSAGetLastError() << endl;
 		return false;
 	}
@@ -97,7 +110,7 @@ bool Server::ProcessConnection(SOCKET sd)
 	{
 	case MSG_SEND_FILE:         //客户端向服务器发送文件
 		cout << "客户端请求向服务器发送文件" << endl;
-		AfxMessageBox(TEXT("客户端请求向服务器发送文件"));
+		//AfxMessageBox(TEXT("客户端请求向服务器发送文件"));
 		break;
 	case MSG_DOWNLOAD_FILE:      //客户端从服务器下载文件
 	{
@@ -155,7 +168,7 @@ bool Server::ProcessConnection(SOCKET sd)
 		msgFileName = (Message::MsgFileName*)msgHead;
 		strcpy(fileName, msgFileName->fileName);
 		cout << "收到发送来的文件名" << fileName << endl;
-		AfxMessageBox(TEXT("收到发送来的文件名"));
+	//	AfxMessageBox(TEXT("收到发送来的文件名"));
 	}
 	break;
 	case MSG_FILE_LENGTH:    //发送的文件长度
@@ -164,13 +177,13 @@ bool Server::ProcessConnection(SOCKET sd)
 		msgFileLength = (Message::MsgFileLength *)msgHead;
 		fileLength = msgFileLength->fileLength;
 		cout << "接收到文件的长度为" << fileLength << endl;
-		AfxMessageBox(TEXT("收到发送来的文件名"));
+	//	AfxMessageBox(TEXT("接收到文件的长度为"));
 	}
 	break;
 	case MSG_FILE:     //发送的文件内容
 	{
 		cout << "开始接收文件" << endl;
-		AfxMessageBox(TEXT("开始接收文件"));
+	//	AfxMessageBox(TEXT("开始接收文件"));
 		if (!ReceiveFile(sd))
 		{
 			//cout << "接收文件失败" << endl;

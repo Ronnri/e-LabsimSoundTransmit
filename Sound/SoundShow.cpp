@@ -92,7 +92,8 @@ LRESULT SoundShow::OnMM_WIM_DATA(UINT wParam, LONG lParam)
 	//当开始录音后 当buffer已满后，将收到MM_WIN_DATA消息，处理该消息可以保存已录好的数据
 
 	GetDlgItem(IDC_STATIC1)->SetWindowTextW(TEXT("OnMM_WIM_DATA"));
-
+	
+	
 	pNewBuffer = (PBYTE)realloc(pSaveBuffer, dwDataLength +((PWAVEHDR)lParam)->dwBytesRecorded);
 
 	if (pNewBuffer == NULL)
@@ -550,8 +551,9 @@ UINT ThreadFunc(LPVOID lpParam) {
 	{
 		return -1;
 	}
-	while (server.ProcessConnection(sdListen))
+	while (true)
 	{
+		server.ProcessConnection(sdListen);
 	}
 	server.CloseSocket();
 	return 0;
