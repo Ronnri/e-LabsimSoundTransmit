@@ -44,7 +44,8 @@ SOCKET Server::AcceptConnection(SOCKET sd)    //接收客户端
 	SOCKET sdListen = accept(sd, (sockaddr*)&saRemote, &nSize);
 	if (sdListen == INVALID_SOCKET)
 	{
-		cout << "接收客户端失败" << WSAGetLastError() << endl;
+		//cout << "接收客户端失败" << WSAGetLastError() << endl;
+		AfxMessageBox(TEXT("接收客户端失败"));
 		return INVALID_SOCKET;
 	}
 	return sdListen;
@@ -96,6 +97,7 @@ bool Server::ProcessConnection(SOCKET sd)
 	{
 	case MSG_SEND_FILE:         //客户端向服务器发送文件
 		cout << "客户端请求向服务器发送文件" << endl;
+		AfxMessageBox(TEXT("客户端请求向服务器发送文件"));
 		break;
 	case MSG_DOWNLOAD_FILE:      //客户端从服务器下载文件
 	{
@@ -153,6 +155,7 @@ bool Server::ProcessConnection(SOCKET sd)
 		msgFileName = (Message::MsgFileName*)msgHead;
 		strcpy(fileName, msgFileName->fileName);
 		cout << "收到发送来的文件名" << fileName << endl;
+		AfxMessageBox(TEXT("收到发送来的文件名"));
 	}
 	break;
 	case MSG_FILE_LENGTH:    //发送的文件长度
@@ -161,14 +164,17 @@ bool Server::ProcessConnection(SOCKET sd)
 		msgFileLength = (Message::MsgFileLength *)msgHead;
 		fileLength = msgFileLength->fileLength;
 		cout << "接收到文件的长度为" << fileLength << endl;
+		AfxMessageBox(TEXT("收到发送来的文件名"));
 	}
 	break;
 	case MSG_FILE:     //发送的文件内容
 	{
 		cout << "开始接收文件" << endl;
+		AfxMessageBox(TEXT("开始接收文件"));
 		if (!ReceiveFile(sd))
 		{
-			cout << "接收文件失败" << endl;
+			//cout << "接收文件失败" << endl;
+			AfxMessageBox(TEXT("接收文件失败"));
 			return false;
 		}
 	}

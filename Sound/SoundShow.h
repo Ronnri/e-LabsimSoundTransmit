@@ -4,6 +4,9 @@
 #include "afxcmn.h"
 #include "afxwin.h"
 
+#include   <afxpriv.h>
+
+
 #include "mmeapi.h"
 #define INP_BUFFER_SIZE 16384
 #define BUFFER_SIZE 4096

@@ -474,14 +474,17 @@ void SoundShow::RunAlgrithm(const double * pdInput, double * pdOutput) {
 	
 }
 
-
 void SoundShow::OnBnClickedSend()
 {
 	// TODO: 在此添加控件通知处理程序代码
 	//socket发送,写入文件，然后通过另一个模块来读取
-	OnBnClickedSave();
 
-	SOCKET saRemote = Client.ConnectServer(Client.ResolveAdress((char*)(LPCTSTR)m_TargetIp), m_TargetPort);
+	OnBnClickedSave();
+	//(char*)(LPCTSTR)m_TargetIp
+	
+	USES_CONVERSION;
+	char * mIP = T2A(m_TargetIp);
+	SOCKET saRemote = Client.ConnectServer(Client.ResolveAdress(mIP), m_TargetPort);
 	if (saRemote == INVALID_SOCKET)
 	{
 		AfxMessageBox(TEXT("连接服务器失败"));
@@ -539,7 +542,7 @@ void SoundShow::OnBnClickedSok()
 	// TODO: 在此添加控件通知处理程序代码
 	CString strPortNum;
 	m_PortShow.GetWindowText(strPortNum);//获取端口号
-	 m_TargetPort = _wtoi(strPortNum);
+	m_TargetPort = _wtoi(strPortNum);
 
 
 	if (m_IsServer)
@@ -583,6 +586,7 @@ void SoundShow::OnBnClickedSok()
 			AfxMessageBox(TEXT("初始化失败"));
 			return ;
 		}
+		AfxMessageBox(m_TargetIp);
 		
 
 		Client.CloseSocket();
