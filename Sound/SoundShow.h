@@ -3,7 +3,7 @@
 #include "Client.h"
 #include "afxcmn.h"
 #include "afxwin.h"
-
+#include <afxsock.h>
 #include   <afxpriv.h>
 
 
@@ -12,6 +12,8 @@
 #define BUFFER_SIZE 4096
 // SoundShow ¶Ô»°¿ò
 #define IDP_SOCKETS_INIT_FAILED            103
+
+
 
 class SoundShow : public CDialog
 {
@@ -44,6 +46,10 @@ protected:
 	PWAVEHDR     pWaveHdr1, pWaveHdr2;
 	WAVEFORMATEX waveform;
 
+
+
+	CWinThread *pThread;
+
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg void OnBnClickedSave();
@@ -56,7 +62,9 @@ public:
 	afx_msg void OnBnClickedSs();
 	afx_msg void OnBnClickedSc();
 	afx_msg void OnBnClickedSreset();
-	afx_msg void OnBnClickedSok();
+	afx_msg
+
+	void OnBnClickedSok();
 
 	virtual BOOL OnInitDialog();
 	
@@ -72,26 +80,7 @@ public:
 	enum IN_PortName { IN1 = 0, IN2, IN3, IN4, IN5, IN6, IN7, IN8, IN9, IN10 };
 	enum OUT_PortName { OUT1 = 0, OUT2, OUT3, OUT4, OUT5, OUT6, OUT7, OUT8, OUT9, OUT10 };
 
-private:
-	int m_nSendBufferSize;
-	int m_nFrameEndCount;
-	double m_nClkState;
-	int m_nBitCount;
-	int m_nOutCount;
-	//char m_nSendBuffer[4096];
 
-	char *m_nSendBuffer;
-	int m_nFrameHeaderCount;
-
-	bool m_bFrameHeader;
-	double m_nReClkState;
-	int m_nFrameRevCount;
-	int m_nRevBitCount;
-	int m_nRevBitBuffer[8];
-	int m_RevByteBuffer[4096];
-	int m_nRevByteCount;
-	bool m_bRevOK;
-	char m_RevBuffer[4096];
 
 public:
 
@@ -105,6 +94,8 @@ public:
 
 	int m_TargetPort;
 	CString m_TargetIp;
+
+	friend UINT ThreadFunc(LPVOID lpParam);
 };
 
 

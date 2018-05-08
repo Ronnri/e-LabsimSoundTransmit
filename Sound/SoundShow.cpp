@@ -15,22 +15,7 @@ IMPLEMENT_DYNAMIC(SoundShow, CDialog)
 SoundShow::SoundShow(CWnd* pParent /*=NULL*/)
 	: CDialog(IDD_SOUNDSHOW, pParent)
 {
-	m_nClkState = 0;
-	m_nSendBufferSize = 0;
-	m_nFrameHeaderCount = 0;
-	m_nBitCount = 0;
-	m_nOutCount = 0;
-	m_nFrameEndCount = 0;
-	m_bRevOK = FALSE;
-	m_bFrameHeader = FALSE;
-	m_nReClkState = 0;
-	m_nFrameRevCount = 0;
-	m_nRevBitCount = 0;
-	memset(m_nRevBitBuffer, 0, sizeof(m_nRevBitBuffer));
-	memset(m_RevByteBuffer, 0, sizeof(m_RevByteBuffer));
-	m_nRevByteCount = 0;
-	m_bRevOK = false;
-	memset(m_RevBuffer, 0, sizeof(m_RevBuffer));
+
 
 
 }
@@ -455,7 +440,7 @@ BOOL SoundShow::OnInitDialog()
 
 		//默认为发送方
 	
-
+		
 		return TRUE;
 		
 	}
@@ -532,11 +517,45 @@ void SoundShow::OnBnClickedSreset()
 	((CWnd *)(this->GetDlgItem(IDC_SC)))->EnableWindow(TRUE);
 	((CWnd *)(this->GetDlgItem(IDC_SS)))->EnableWindow(TRUE);
 	((CWnd *)(this->GetDlgItem(IDC_IPADDRESS1)))->EnableWindow(TRUE);
+	((CWnd *)(this->GetDlgItem(IDC_SOK)))->EnableWindow(TRUE);
+	
 	m_IsServer = TRUE;
 
 }
 
+UINT ThreadFunc(LPVOID lpParam) {
 
+	SoundShow *dlg = (SoundShow *)lpParam; //获取对话框指针
+	
+	(dlg->GetDlgItem(IDC_SOK))->EnableWindow(FALSE);
+
+	if (!AfxSocketInit())
+	{
+		AfxMessageBox(IDP_SOCKETS_INIT_FAILED);
+	}
+
+	Server server;
+
+	if (!server.InitSock())   //初始化失败
+	{
+		AfxMessageBox(TEXT("初始化失败"));
+	}
+	server.sd = server.BindListen(dlg->m_TargetPort);
+	if (server.sd == INVALID_SOCKET)
+	{
+		return -1;
+	}
+	SOCKET sdListen = server.AcceptConnection(server.sd);
+	if (sdListen == INVALID_SOCKET)
+	{
+		return -1;
+	}
+	while (server.ProcessConnection(sdListen))
+	{
+	}
+	server.CloseSocket();
+	return 0;
+}
 void SoundShow::OnBnClickedSok()
 {
 	// TODO: 在此添加控件通知处理程序代码
@@ -547,24 +566,10 @@ void SoundShow::OnBnClickedSok()
 
 	if (m_IsServer)
 	{
-		if (!Server.InitSock())   //初始化失败
-		{
-			AfxMessageBox(TEXT("初始化失败"));
-		}
-		Server.sd = Server.BindListen(m_TargetPort);
-		if (Server.sd == INVALID_SOCKET)
-		{
-			return ;
-		}
-		SOCKET sdListen = Server.AcceptConnection(Server.sd);
-		if (sdListen == INVALID_SOCKET)
-		{
-			return;
-		}
-		while (Server.ProcessConnection(sdListen))
-		{
-		}
-		Server.CloseSocket();
+		
+		pThread = AfxBeginThread(ThreadFunc, this);
+
+		
 	}
 	else
 	{
